@@ -1,120 +1,89 @@
-from graphics import *
+from PIL import Image
 import random
 import math
-import os
 
-WIN_W = 1024
-WIN_H = 1024
-RENDER_SCALE = 8
+SIM_SIZE = 128
+SCALE = 4
 ITERATIONS = 400
 SPACING = 2
-RENDER_RATIO = int(WIN_W/RENDER_SCALE)
+WANDER_COLOR = (0,0,0)
+STUCK_COLOR = (255,0,0)
 
 
-#Used to clear console during loading bar
-def clear():
-    os.system( 'cls' )
-
-
-def drawGrid(pixelList):
-    erase = Rectangle(Point(0,0),Point(WIN_W, WIN_H))
-    erase.setFill("white")
-    erase.draw(win)
-    #color each cell its corresponding color
-    for i in range (len(pixelList)):
-        for j in range(len(pixelList[0])):
-            if pixelList[i][j] != 0:
-                rect = Rectangle(Point(RENDER_SCALE * i, RENDER_SCALE * j),
-                                 Point(RENDER_SCALE * i + RENDER_SCALE, RENDER_SCALE * j + RENDER_SCALE))
-                if pixelList[i][j] == 1:
-                    rect.setFill("black")
-                    rect.setOutline("black")
-                if pixelList[i][j] == 2:
-                    rect.setFill("red")
-                    rect.setOutline("red")
-                rect.draw(win)
-    #color seed pixel pink
-    rect = Rectangle(Point(WIN_W/2,WIN_H/2), Point(WIN_W/2+RENDER_SCALE, WIN_H/2+RENDER_SCALE))
-    rect.setFill("HotPink")
-    rect.setOutline("HotPink")
-    rect.draw(win)
-
-
-def simulateGrid(grid, xRange, yRange):
+#Simulates a given grid by moving all particles, checking for collisions, and trimming those that have wandered off the edge
+def simulateGrid(grid, range, edges):
     #update locations of all moving particles
-    for i in xRange:
-        for j in yRange:
+    for i in range:
+        for j in range:
             #if grid = 1, there is a wandering particle there - move it
-            if grid[i][j] == 1:
-                dirX,dirY = chooseDirection()
-                if i+dirX < 1 or j+dirY < 1 or i+dirX > len(grid)-2 or j+dirY > len(grid)-2:
-                    grid[i][j] = 0
+            if grid[i][j] == 1 :
+                dirX,dirY = random.choice([(1, 0), (0, 1), (-1, 0), (0, -1), (0, 0)])
                 #only if it is not trying to move into another particle
                 if grid[i+dirX][j+dirY] == 0:
                     grid[i+dirX][j+dirY] = grid[i][j]
                     grid[i][j] = 0
             #if the grid point is a stuck particle, check if there are any nonstuck next to it
-            if grid[i][j] == 2:
+            elif grid[i][j] == 2:
                 for dirX,dirY in [(-1, 0), (0, -1), (1, 0), (0, 1)]:
                     if grid[i+dirX][j+dirY] == 1:
                         grid[i+dirX][j+dirY] = 2
-
-
-def chooseDirection():
-    directions = [(1, 0), (0, 1), (-1, 0), (0, -1), (0, 0)]
-    dirX, dirY = random.choice(directions)
-    return dirX, dirY
-
-
-def progressBar(currentVal, totalVal, bars=20):
-    pc = currentVal/totalVal
-    numBars = int(math.floor(pc*bars))
-    bar = "[" + "\u2588"*numBars + "-"*(bars-numBars) + "]"
-    return bar + str(round(pc*100, 2)) + "%"
+    #trim the edges
+    for x,y in edges:
+        grid[x][y] = 0
+        grid[y][x] = 0
 
 #######################Main Program#######################
 
-print("Wandering Fractal Version 2.0")
-print("By Carter Sifferman, 12/28/2017\n\n")
+print("DLA Simulation Version 2.1")
+print("By Carter Sifferman, 1/10/2018\n\n")
 print("Would you like to input custom parameters? [y/n]")
 inp = input("")
 while inp != "N" and inp != "n" and inp != "Y" and inp != "y":
     inp = input("Please input 'y' or 'n'")
 
 if inp == "y" or inp == "Y":
-    WIN_W = int(input("Output window width [integer]:"))
-    WIN_H = int(input("Input window width [integer]:"))
-    RENDER_SCALE = int(input("Render Scale [integer]:"))
+    SIM_SIZE = int(input("Simulation Size [integer]:"))
+    SCALE = int(input("Render Scale [integer]:"))
     ITERATIONS = int(input("Iterations [integer]:"))
-    SPACING = int(input("Spacing [integer]:"))
-    RENDER_RATIO = int(WIN_W / RENDER_SCALE)
 
 elif inp == "n" or inp == "N":
     input("Press enter to run")
 
-startingGrid = [[0 for i in range(RENDER_RATIO)]for j in range(RENDER_RATIO)]
+#Create blank starting grid
+grid = [[0 for i in range(SIM_SIZE)] for j in range(SIM_SIZE)]
 
-for i in range(2, len(startingGrid)):
-    for j in range(2, len(startingGrid[0])):
+#Fill in starting particles
+for i in range(2, len(grid)):
+    for j in range(2, len(grid[0])):
         if i % SPACING == 0 and j % SPACING == 0:
-            startingGrid[i][j] = 1
+            grid[i][j] = 1
 
-startingGrid[int(math.floor(len(startingGrid)/2))][int(math.floor(len(startingGrid)/2))] = 2
+#Set center to a "stuck" particle
+grid[int(math.floor(len(grid) / 2))][int(math.floor(len(grid) / 2))] = 2
 
-forwardXRange = range(1,len(startingGrid)-1)
-forwardYRange = range(1,len(startingGrid[0])-1)
-backwardXRange = range(len(startingGrid) - 1, 1, -1)
-backwardYRange = range(len(startingGrid[0]) - 1, 1, -1)
+#These ranges are necessary to remove bias caused by checking in the same direction first every time
+forwardRange = range(1, len(grid) - 1)
+backwardRange = range(len(grid) - 1, 1, -1)
 
+#Define the edges to be trimmed each iteration
+edges = list()
+for n in range(SIM_SIZE):
+    edges.append((0,n))
+    edges.append((SIM_SIZE-1,n))
+
+#Simulate the grid for the number of iterations
 for i in range(int(math.floor(ITERATIONS/2))):
-    simulateGrid(startingGrid, forwardXRange, forwardYRange)
-    simulateGrid(startingGrid, backwardXRange, backwardYRange)
-    clear()
-    print(progressBar(i*2, ITERATIONS))
+    simulateGrid(grid, forwardRange, edges)
+    simulateGrid(grid, backwardRange, edges)
+    print(str(int(i/ITERATIONS*200)) + '%')
 
-win = GraphWin("Wandering Fractal V2", WIN_W, WIN_H)
-
-drawGrid(startingGrid)
-
-win.getMouse()
-win.close()
+#Draw the final grid
+img = Image.new('RGB', (len(grid), len(grid[0])), (255, 255, 255))
+for i in range(len(grid)):
+    for j in range(len(grid[0])):
+        if grid[i][j] == 1:
+            img.putpixel((i, j), (0, 0, 0))
+        elif grid[i][j] == 2:
+            img.putpixel((i, j), (255, 0, 0))
+img = img.resize((SIM_SIZE * SCALE, SIM_SIZE * SCALE))
+img.show()
