@@ -2,7 +2,7 @@
 Simple diffusion limited aggregation simulation written in Python. Displays a graphics window to the user with the specified window size, scale, and iterations.
 ## Example Output
 <p align="center">
-  <img src="https://i.imgur.com/rPIOhZD.png"></img>
+  <img src="https://i.imgur.com/gnBThAU.png"></img>
 </p>
 
 ## How It Works
