@@ -1,5 +1,5 @@
 # DLA Simulation
-Simple diffusion limited aggregation simulation written in Python. Displays a graphics window to the user with the specified window size, scale, and iterations.
+Simple diffusion limited aggregation simulation written in Python. Displays a live graphics window to the user with the specified window size, scale, and initial spacing.
 
 ## Example Output
 <p align="center">
