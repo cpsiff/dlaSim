@@ -6,24 +6,29 @@ import math
 TIME_STEP = 1 / 30
 WANDER_COLOR = (255, 255, 255)
 STUCK_COLOR = (255, 0, 0)
-SIM_SIZE = 256
+SIM_SIZE = 128
 SCALE = 4
-SPACING = 2
+INITIAL_SPACING = 2
+
 
 class Environment:
     COLLISION_DIRECTIONS = [(-1, 0), (0, -1), (1, 0), (0, 1)]
     MOVEMENT_DIRECTIONS = [(1, 0), (0, 1), (-1, 0), (0, -1), (0, 0)]
 
     def __init__(self):
+
         #create empty grid
         self.grid = [[0 for i in range(SIM_SIZE)] for j in range(SIM_SIZE)]
+
         # Fill in starting particles
         for i in range(2, len(self.grid)):
             for j in range(2, len(self.grid[0])):
-                if i % SPACING == 0 and j % SPACING == 0:
+                if i % INITIAL_SPACING == 0 and j % INITIAL_SPACING == 0:
                     self.grid[i][j] = 1
+
         # Set center to a "stuck" particle
         self.grid[int(math.floor(len(self.grid) / 2))][int(math.floor(len(self.grid) / 2))] = 2
+
         # Define the edges to be trimmed each iteration
         self.edges = list()
         for n in range(SIM_SIZE):
@@ -55,27 +60,26 @@ class Environment:
             self.grid[x][y] = 0
             self.grid[y][x] = 0
 
+
     def render(self):
-        #convert grid to 1d list
-        l1 = []
-        l2 = []
+        #convert grid to flat list
+        wandering = []
+        stuck = []
         for i in range(len(self.grid)):
             for j in range(len(self.grid)):
                 if self.grid[i][j] == 1:
-                    l1.append(i)
-                    l1.append(j)
+                    wandering.append(i)
+                    wandering.append(j)
                 if self.grid[i][j] == 2:
-                    l2.append(i)
-                    l2.append(j)
-        wandering = tuple(l1)
-        stuck = tuple(l2)
+                    stuck.append(i)
+                    stuck.append(j)
         glPointSize(float(SCALE))
         glColor3f(*WANDER_COLOR)
-        pyglet.graphics.draw(int(len(l1)/2), pyglet.gl.GL_POINTS,
-                             ('v2i',wandering))
+        pyglet.graphics.draw(int(len(wandering)/2), pyglet.gl.GL_POINTS,
+                             ('v2i',tuple(wandering)))
         glColor3f(*STUCK_COLOR)
-        pyglet.graphics.draw(int(len(l2)/2), pyglet.gl.GL_POINTS,
-                             ('v2i',stuck))
+        pyglet.graphics.draw(int(len(stuck)/2), pyglet.gl.GL_POINTS,
+                             ('v2i',tuple(stuck)))
 
 
 #######################Main Program#######################
