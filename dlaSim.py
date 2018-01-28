@@ -1,3 +1,7 @@
+#DLA Simulation
+#Carter Sifferman, 2018
+#https://github.com/carterpaul/dlaSim
+
 import pyglet
 from pyglet.gl import *
 import random
